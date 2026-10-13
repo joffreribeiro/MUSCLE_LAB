@@ -39,3 +39,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# testes
+.test-build/
+
+# chaves locais
+.env
+.env.local

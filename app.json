@@ -1,25 +1,25 @@
 {
   "expo": {
-    "name": "app-treino",
-    "slug": "app-treino",
+    "name": "Muscle Lab",
+    "slug": "muscle-lab",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#111B28",
+        "foregroundImage": "./assets/icon/adaptive-foreground.png",
+        "monochromeImage": "./assets/icon/adaptive-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },
+    "plugins": [["expo-notifications", { "color": "#14A8A8", "defaultChannel": "descanso" }]],
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon/favicon.png"
     }
   }
 }

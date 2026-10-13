@@ -1,0 +1,17 @@
+const a=require('../.test-build/data/bodyWeight.js'),st=require('../.test-build/data/stats.js'),assert=require('assert');
+assert.strictEqual(a.parseWeight('78,5'),78.5);assert.strictEqual(a.parseWeight('abc'),null);assert.strictEqual(a.parseWeight('10'),null);assert.strictEqual(a.parseWeight('500'),null);
+const d=(y,m,dd,h=12)=>new Date(y,m,dd,h).toISOString();
+let e=a.upsertWeight([],{dateISO:d(2026,9,1),kg:80});e=a.upsertWeight(e,{dateISO:d(2026,9,5),kg:79});e=a.upsertWeight(e,{dateISO:d(2026,9,5,18),kg:78.5});
+assert.strictEqual(e.length,2);assert.strictEqual(e[1].kg,78.5);
+const today=new Date(2026,9,13);
+assert.strictEqual(a.weightSeries(e,today,7).length,0);assert.strictEqual(a.weightSeries(e,today,30).length,2);assert.strictEqual(a.weightSeries(e,today,null).length,2);
+assert.strictEqual(a.weightDelta(e),-1.5);assert.strictEqual(a.weightDelta([e[0]]),null);
+assert.strictEqual(a.formatKgPtBR(78),'78');assert.strictEqual(a.formatKgPtBR(78.54),'78,5');
+const set=(dt,w,r)=>({exerciseId:'x',weight:w,reps:r,loggedAtISO:dt});
+const sets=[set(d(2026,9,13),10,10),set(d(2026,9,12),10,5),set(d(2026,9,3),20,10),set(d(2026,8,20),50,10),set(d(2026,5,2),100,1)];
+const b7=st.volumeBuckets(sets,today,7);assert.strictEqual(b7.length,7);assert.strictEqual(b7[6].volume,100);assert.strictEqual(b7[5].volume,50);
+const b30=st.volumeBuckets(sets,today,30);assert.strictEqual(b30.length,5);assert.strictEqual(b30[4].volume,150);assert.strictEqual(b30[3].volume,200);assert.ok(b30[4].today);
+const ba=st.volumeBuckets(sets,today,null);assert.strictEqual(ba.length,5);assert.strictEqual(ba[ba.length-1].volume,350);assert.strictEqual(ba[0].label,'jun');assert.strictEqual(ba[0].volume,100);
+const g=st.groupShare(sets,today,null,()=>({key:'a',label:'A'}));assert.strictEqual(g.total,5);
+assert.strictEqual(st.groupShare(sets,today,7,()=>({key:'a',label:'A'})).total,2);
+console.log('ok');
