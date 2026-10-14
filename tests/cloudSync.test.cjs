@@ -9,7 +9,7 @@ const base = () => ({
   comments: {},
   settings: { descansoSegundos: 90, pesoCorporalKg: 78, mostrarAnalytics: true },
   profile: null,
-  onboardingComplete: true,
+  onboardingComplete: false,
   weights: [],
   measures: [],
   activeProgram: null,
@@ -54,6 +54,9 @@ assert.notStrictEqual(c.hashData(base()), c.hashData(tweaked));
 // aparelho vazio
 assert.strictEqual(c.isLocalEmpty(base()), true);
 assert.strictEqual(c.isLocalEmpty(withSession(1)), false);
+// só o onboarding (ou o perfil) concluído já é dado a guardar
+assert.strictEqual(c.isLocalEmpty({ ...base(), onboardingComplete: true }), false);
+assert.strictEqual(c.isLocalEmpty({ ...base(), profile: { sexo: 'm' } }), false);
 
 // decisão
 const hash = 'h1';

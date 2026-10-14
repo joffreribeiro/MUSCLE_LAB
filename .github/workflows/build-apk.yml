@@ -1,0 +1,126 @@
+name: Build e publicar APK
+
+# Gera o APK do Muscle Lab na nuvem e o publica na release "latest-apk", junto com o apk-version.json.
+# Os celulares com o app instalado comparam o número do próprio build com esse arquivo e mostram o aviso
+# de atualização. O arquivo sai como MUSCLELAB_<versão>.apk (ex.: MUSCLELAB_1.0.0-5.apk).
+#
+# Quando roda:
+#   1) manualmente: aba Actions > "Build e publicar APK" > Run workflow; ou
+#   2) quando a mensagem do commit enviado para main tem "[apk]" (ex.: "Novo treino guiado [apk]").
+# Cada APK novo faz os celulares mostrarem o aviso, então ele NÃO sai a cada envio.
+#
+# Segredos necessários (Settings > Secrets and variables > Actions): veja PUBLICAR-APK.md.
+#   ANDROID_KEYSTORE_BASE64    keystore de release em base64
+#   ANDROID_KEYSTORE_PASSWORD  senha da keystore (a mesma para a chave)
+#   ENV_FILE                   conteúdo do arquivo .env (as variáveis EXPO_PUBLIC_FIREBASE_*)
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[apk]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Testes
+        run: npm test
+
+  build:
+    needs: check
+    runs-on: ubuntu-latest
+    env:
+      # Embutidos no app: ele compara o próprio número de build com o publicado (src/context/UpdateContext.tsx).
+      EXPO_PUBLIC_BUILD_NUMBER: ${{ github.run_number }}
+      EXPO_PUBLIC_UPDATE_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Definir a versão do app
+        run: echo "EXPO_PUBLIC_APP_VERSION=$(node -p "require('./app.json').expo.version")-${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v4
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Gravar o .env (configuração do Firebase)
+        run: printf '%s\n' "$ENV_FILE" > .env
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+
+      - name: Gerar o projeto Android (expo prebuild)
+        run: npx expo prebuild --platform android --non-interactive
+
+      - name: Decodificar a keystore de release
+        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      - name: Ajustar versão e assinatura do build.gradle
+        run: node scripts/patch-android-release.cjs "${{ github.run_number }}" "${EXPO_PUBLIC_APP_VERSION}"
+
+      - name: Build do APK de release
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+        env:
+          MUSCLELAB_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+
+      # MUSCLELAB_<versão>.apk é o arquivo oficial. muscle-lab.apk (nome fixo) é uma cópia para o link
+      # padrão, usado quando o app ainda não sabe a versão publicada.
+      - name: Nomear o APK
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk muscle-lab.apk
+          cp muscle-lab.apk "MUSCLELAB_${EXPO_PUBLIC_APP_VERSION}.apk"
+
+      - name: Gerar apk-version.json
+        run: echo "{\"sha\":\"${{ github.sha }}\",\"build\":${{ github.run_number }},\"versao\":\"${EXPO_PUBLIC_APP_VERSION}\"}" > apk-version.json
+
+      - name: Publicar a release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-apk
+          name: "Muscle Lab (build ${{ github.run_number }})"
+          body: "APK gerado automaticamente a partir do commit ${{ github.sha }}."
+          files: |
+            muscle-lab.apk
+            MUSCLELAB_*.apk
+            apk-version.json
+          make_latest: true
+
+      # Mantém só os 3 APKs com versão no nome mais recentes; muscle-lab.apk e apk-version.json ficam sempre.
+      - name: Limpar APKs antigos da release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/releases/tags/latest-apk" \
+            --jq '.assets | map(select(.name | test("^musclelab_.*[.]apk$"; "i"))) | sort_by(.created_at) | reverse | .[3:] | .[].id' |
+          while read -r id; do
+            gh api -X DELETE "repos/${{ github.repository }}/releases/assets/$id"
+          done

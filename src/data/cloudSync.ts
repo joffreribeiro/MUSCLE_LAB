@@ -12,7 +12,7 @@ export interface RemoteSnapshot {
   updatedAt: string;
 }
 
-/** Acesso ao servidor (implementado com Supabase; nos testes, uma versão em memória). */
+/** Acesso ao servidor (implementado com Firebase; nos testes, uma versão em memória). */
 export interface CloudApi {
   fetchRemote(): Promise<RemoteSnapshot | null>;
   /** Grava a cópia e devolve a nova marca de modificação. */
@@ -37,9 +37,9 @@ export function hashData(data: BackupData): string {
   return `${(h >>> 0).toString(16)}:${text.length}`;
 }
 
-/** Aparelho sem nada de uso (novo): pode receber os dados da nuvem sem perguntar. */
+/** Aparelho sem nada de uso (novo): pode receber os dados da nuvem sem perguntar. Ter concluído o onboarding ou ter perfil já conta como uso. */
 export function isLocalEmpty(data: BackupData): boolean {
-  return data.sessions.length === 0 && data.weights.length === 0 && data.measures.length === 0 && Object.keys(data.comments).length === 0;
+  return !data.onboardingComplete && data.profile === null && data.sessions.length === 0 && data.weights.length === 0 && data.measures.length === 0 && Object.keys(data.comments).length === 0;
 }
 
 export type SyncDecision = 'noop' | 'push' | 'pull' | 'conflict';

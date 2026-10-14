@@ -9,6 +9,7 @@ import { parseWeight } from '../data/bodyWeight';
 import { daysAfterFrequencyChange } from '../data/trainingDays';
 import { requestRestAlertPermission } from '../utils/restNotification';
 import { useCloudSync } from '../context/CloudSyncContext';
+import { useUpdate } from '../context/UpdateContext';
 import { Goal, Level, Sex } from '../types';
 
 const goalLabel: Record<Goal, string> = {
@@ -40,6 +41,8 @@ function cycle<T>(order: T[], current: T): T {
 export function PerfilScreen() {
   const navigation = useNavigation<any>();
   const cloud = useCloudSync();
+  const update = useUpdate();
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
   const { profile, settings, workouts, updateSettings, completeOnboarding, resetOnboarding, applyProgram, logWeight, currentWeightKg } = useWorkout();
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
   const [regenerated, setRegenerated] = useState<string | null>(null);
@@ -223,6 +226,21 @@ export function PerfilScreen() {
             onPress={() => navigation.navigate('Conta')}
           />
           <Row label="Backup e restauração" value="Exportar ou importar" onPress={() => navigation.navigate('Backup')} divider />
+          <Row
+            label="Versão do app"
+            value={updateMsg ?? (update.currentVersion ? `${update.currentVersion} · verificar` : 'Desenvolvimento')}
+            onPress={() => {
+              if (!update.canCheck) {
+                setUpdateMsg('Verificação só no app instalado');
+                return;
+              }
+              setUpdateMsg('Verificando…');
+              void update.checkNow().then((r) =>
+                setUpdateMsg(r === 'nova' ? 'Nova versão disponível' : r === 'atual' ? 'Você está na versão mais recente' : 'Sem conexão para verificar'),
+              );
+            }}
+            divider
+          />
         </View>
 
         <Pressable style={styles.onboardingLink} onPress={resetOnboarding}>

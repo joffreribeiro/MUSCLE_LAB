@@ -1,0 +1,11 @@
+// Regras do Firestore para o Muscle Lab: cada conta lê e grava somente o próprio documento.
+// Se o projeto já tem outras regras (ex.: o kingbt), ACRESCENTE só este bloco `match` dentro de
+// `match /databases/{database}/documents { ... }`, sem apagar o que já existe.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /muscleLabBackups/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

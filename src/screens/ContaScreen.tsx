@@ -1,40 +1,19 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NavBar } from '../components/NavBar';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { AuthForm } from '../components/AuthForm';
 import { colors, minTouchTarget, radii, screenPaddingHorizontal } from '../theme/tokens';
 import { useCloudSync } from '../context/CloudSyncContext';
-import { validateCredentials } from '../data/cloudErrors';
 import { formatSessionDate, formatHHmm } from '../utils/format';
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 export function ContaScreen() {
   const navigation = useNavigation<any>();
-  const { configured, user, status, message, lastSyncISO, conflict, signIn, signUp, signOut, syncNow, resolveConflict } = useCloudSync();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [working, setWorking] = useState(false);
+  const { configured, user, status, message, lastSyncISO, conflict, signOut, syncNow, resolveConflict } = useCloudSync();
   const [confirmSignOut, setConfirmSignOut] = useState(false);
-
-  const submit = async (mode: 'entrar' | 'criar') => {
-    setNotice(null);
-    const problem = validateCredentials(email, password);
-    setFormError(problem);
-    if (problem) return;
-    setWorking(true);
-    if (mode === 'entrar') {
-      await signIn(email, password);
-    } else {
-      const r = await signUp(email, password);
-      if (r.ok && r.needsConfirmation) setNotice('Conta criada. Enviamos um link de confirmação para o seu e-mail; confirme e depois toque em "Entrar".');
-    }
-    setPassword('');
-    setWorking(false);
-  };
 
   const when = (iso: string) => {
     const d = new Date(iso);
@@ -57,7 +36,7 @@ export function ContaScreen() {
             <Text style={styles.title}>Sincronização desligada</Text>
             <Text style={styles.text}>
               Com uma conta, seus treinos e histórico ficam guardados na nuvem e aparecem em qualquer aparelho em que você entrar. Para ligar,
-              o app precisa estar conectado a um projeto Supabase. O passo a passo está no arquivo supabase/LEIAME.md.
+              o app precisa estar conectado a um projeto Firebase. O passo a passo está no arquivo firebase/LEIAME.md.
             </Text>
             <Text style={styles.hint}>Enquanto isso, use o backup por arquivo em Perfil → Backup.</Text>
           </View>
@@ -65,41 +44,7 @@ export function ContaScreen() {
           <View style={styles.card}>
             <Text style={styles.title}>Entrar ou criar conta</Text>
             <Text style={styles.text}>Seus dados ficam ligados ao seu e-mail e podem ser abertos em outros aparelhos.</Text>
-            <TextInput
-              value={email}
-              onChangeText={(t) => {
-                setEmail(t);
-                setFormError(null);
-              }}
-              placeholder="E-mail"
-              placeholderTextColor={colors.gray400}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              textContentType="emailAddress"
-              style={styles.input}
-              accessibilityLabel="E-mail"
-            />
-            <TextInput
-              value={password}
-              onChangeText={(t) => {
-                setPassword(t);
-                setFormError(null);
-              }}
-              placeholder="Senha (mínimo 6 caracteres)"
-              placeholderTextColor={colors.gray400}
-              secureTextEntry
-              autoCapitalize="none"
-              textContentType="password"
-              style={styles.input}
-              accessibilityLabel="Senha"
-            />
-            {formError || message ? <Text style={styles.error}>{formError ?? message}</Text> : null}
-            {notice ? <Text style={styles.success}>{notice}</Text> : null}
-            <PrimaryButton label={working ? 'Aguarde…' : 'Entrar'} onPress={() => !working && submit('entrar')} />
-            <Pressable style={styles.secondary} onPress={() => !working && submit('criar')} accessibilityRole="button">
-              <Text style={styles.secondaryLabel}>Criar conta</Text>
-            </Pressable>
+            <AuthForm />
           </View>
         ) : (
           <>

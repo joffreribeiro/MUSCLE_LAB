@@ -6,7 +6,7 @@ import { useBackupData } from './useBackupData';
 import { BackupData, summarizeBackup, BackupSummary } from '../data/backup';
 import { CloudApi, EMPTY_SYNC_META, hashData, runSync, SyncMeta } from '../data/cloudSync';
 import { friendlyCloudError } from '../data/cloudErrors';
-import { cloudConfigured, CloudUser, currentUser, makeCloudApi, onUserChange, signIn as cloudSignIn, signOut as cloudSignOut, signUp as cloudSignUp } from '../utils/cloud';
+import { cloudConfigured, CloudUser, currentUser, makeCloudApi, onUserChange, signIn as cloudSignIn, signOut as cloudSignOut, signUp as cloudSignUp, resetPassword as cloudResetPassword } from '../utils/cloud';
 
 const META_KEY = '@app-treino/syncMeta';
 /** Espera depois da última mudança antes de enviar (junta várias mudanças seguidas). */
@@ -22,8 +22,10 @@ export interface ConflictInfo {
 }
 
 interface CloudSyncValue {
-  /** O app foi configurado com um projeto Supabase. */
+  /** O app foi configurado com um projeto Firebase. */
   configured: boolean;
+  /** Já se sabe se há uma sessão aberta neste aparelho (evita piscar a tela de login). */
+  authReady: boolean;
   user: CloudUser | null;
   status: SyncStatus;
   /** Mensagem de erro ou de aviso a mostrar. */
@@ -33,6 +35,8 @@ interface CloudSyncValue {
   signIn: (email: string, password: string) => Promise<boolean>;
   /** needsConfirmation: o e-mail precisa ser confirmado antes de entrar. */
   signUp: (email: string, password: string) => Promise<{ ok: boolean; needsConfirmation: boolean }>;
+  /** Envia o e-mail para criar uma nova senha. */
+  resetPassword: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   syncNow: () => Promise<void>;
   resolveConflict: (keep: 'local' | 'cloud') => Promise<void>;
@@ -51,6 +55,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
   const dataHash = useMemo(() => hashData(data), [data]);
 
   const [user, setUser] = useState<CloudUser | null>(null);
+  const [authReady, setAuthReady] = useState(!cloudConfigured);
   const [status, setStatus] = useState<SyncStatus>(cloudConfigured ? 'ociosa' : 'desligada');
   const [message, setMessage] = useState<string | null>(null);
   const [lastSyncISO, setLastSyncISO] = useState<string | null>(null);
@@ -95,6 +100,8 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
         if (alive) setUser(u);
       } catch (e) {
         if (alive) setMessage(friendlyCloudError(e));
+      } finally {
+        if (alive) setAuthReady(true);
       }
     })();
     const stop = onUserChange((u) => alive && setUser(u));
@@ -197,6 +204,17 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const resetPassword = useCallback(async (email: string) => {
+    setMessage(null);
+    try {
+      await cloudResetPassword(email);
+      return true;
+    } catch (e) {
+      setMessage(friendlyCloudError(e));
+      return false;
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await cloudSignOut();
@@ -217,6 +235,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
 
   const value: CloudSyncValue = {
     configured: cloudConfigured,
+    authReady,
     user,
     status,
     message,
@@ -224,6 +243,7 @@ export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
     conflict,
     signIn,
     signUp,
+    resetPassword,
     signOut,
     syncNow: () => sync(),
     resolveConflict,
