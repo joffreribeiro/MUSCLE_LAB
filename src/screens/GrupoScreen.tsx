@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NavBar } from '../components/NavBar';
-import { ExerciseMedia } from '../components/ExerciseMedia';
+import { ExerciseThumb } from '../components/ExerciseThumb';
 import { colors, radii, screenPaddingHorizontal } from '../theme/tokens';
 import { catalog } from '../data/catalog';
 import { GroupKey } from '../types';
@@ -45,14 +45,7 @@ export function GrupoScreen() {
               style={[styles.row, i > 0 && styles.rowDivider]}
               onPress={() => navigation.navigate('Ficha', { exerciseId: e.id })}
             >
-              <View style={styles.thumb}>
-                <ExerciseMedia
-                  exerciseId={e.id}
-                  placeholderWidth={20}
-                  placeholderHeight={28}
-                  placeholderHighlighted
-                />
-              </View>
+              <ExerciseThumb exerciseId={e.id} highlighted />
               <Text style={styles.rowName}>{e.name}</Text>
               <Text style={styles.chevron}>›</Text>
             </Pressable>
@@ -79,17 +72,6 @@ const styles = StyleSheet.create({
   list: { backgroundColor: colors.surface },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingLeft: screenPaddingHorizontal, paddingRight: 14 },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.divider },
-  thumb: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.card,
-    backgroundColor: colors.fill100,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
   rowName: { flex: 1, fontSize: 15, fontWeight: '600', lineHeight: 19, color: colors.ink },
   chevron: { color: colors.gray300, fontSize: 17 },
 });

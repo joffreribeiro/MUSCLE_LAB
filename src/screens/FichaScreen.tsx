@@ -4,7 +4,9 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { NavBar } from '../components/NavBar';
 import { ExerciseMedia } from '../components/ExerciseMedia';
 import { Icon } from '../components/icons/Icon';
+import { Chip } from '../components/Chip';
 import { EvolutionSection } from '../components/EvolutionSection';
+import { ExerciseHistory } from '../components/ExerciseHistory';
 import { MediaViewer } from '../components/MediaViewer';
 import { MuscleSection } from '../components/MuscleSection';
 import { colors, radii, screenPaddingHorizontal } from '../theme/tokens';
@@ -12,11 +14,20 @@ import { catalog, findExerciseById } from '../data/catalog';
 import { getKinesiology } from '../data/muscles';
 import { getExerciseMedia } from '../data/media';
 
+type Tab = 'info' | 'musculos' | 'progresso' | 'historico';
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'info', label: 'Informações' },
+  { key: 'musculos', label: 'Músculos' },
+  { key: 'progresso', label: 'Progresso' },
+  { key: 'historico', label: 'Histórico' },
+];
+
 export function FichaScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const exercise = findExerciseById(route.params.exerciseId);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>('info');
 
   if (!exercise) return null;
 
@@ -48,7 +59,16 @@ export function FichaScreen() {
           )
         }
       />
-      <ScrollView style={styles.body}>
+      <View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+          {TABS.map((t) => (
+            <Chip key={t.key} label={t.label} active={tab === t.key} onPress={() => setTab(t.key)} />
+          ))}
+        </ScrollView>
+      </View>
+      <ScrollView style={styles.body} key={tab}>
+        {tab === 'info' ? (
+        <>
         <Pressable style={styles.illustration} onPress={media ? () => setViewerOpen(true) : undefined} disabled={!media}>
           <ExerciseMedia
             exerciseId={exercise.id}
@@ -57,6 +77,7 @@ export function FichaScreen() {
             placeholderCaption="SEM ANIMAÇÃO DISPONÍVEL"
             placeholderHighlighted
             placeholderLimbColor={colors.gray200}
+            fit="contain"
           />
         </Pressable>
 
@@ -73,14 +94,6 @@ export function FichaScreen() {
           <View style={styles.descCard}>
             <Text style={styles.descText}>{exercise.description}</Text>
           </View>
-
-          {exercise.muscleGroup !== 'cardio' ? <EvolutionSection exerciseId={exercise.id} /> : null}
-
-          <View style={styles.sectionHeader}>
-            <Icon name="person" color={colors.navy700} size={18} />
-            <Text style={styles.sectionTitle}>Músculos trabalhados</Text>
-          </View>
-          <MuscleSection kinesiology={kin} />
 
           {kin?.movimentos ? (
             <>
@@ -153,6 +166,31 @@ export function FichaScreen() {
             <Text style={styles.warnBody}>{exercise.warning}</Text>
           </View>
         </View>
+        </>
+        ) : null}
+
+        {tab === 'musculos' ? (
+          <View style={styles.tabBody}>
+            <Text style={styles.tabTitle}>{exercise.name}</Text>
+            <MuscleSection kinesiology={kin} />
+          </View>
+        ) : null}
+
+        {tab === 'progresso' ? (
+          <View style={styles.tabBody}>
+            {exercise.muscleGroup !== 'cardio' ? (
+              <EvolutionSection exerciseId={exercise.id} showEmpty />
+            ) : (
+              <Text style={styles.tabNote}>O progresso por carga vale para exercícios de força; no cardio, acompanhe o tempo no Histórico.</Text>
+            )}
+          </View>
+        ) : null}
+
+        {tab === 'historico' ? (
+          <View style={styles.tabBody}>
+            <ExerciseHistory exerciseId={exercise.id} />
+          </View>
+        ) : null}
       </ScrollView>
       <MediaViewer visible={viewerOpen} source={media} title={exercise.name} onClose={() => setViewerOpen(false)} />
     </View>
@@ -172,8 +210,12 @@ const styles = StyleSheet.create({
   },
   playGlyph: { color: colors.surface, fontSize: 13 },
   body: { flex: 1 },
+  tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: screenPaddingHorizontal, paddingVertical: 10 },
+  tabBody: { padding: screenPaddingHorizontal },
+  tabTitle: { fontSize: 18, fontWeight: '700', color: colors.ink, marginBottom: 12 },
+  tabNote: { fontSize: 14, lineHeight: 20, color: colors.gray500, padding: 16 },
   illustration: {
-    height: 210,
+    height: 280,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',

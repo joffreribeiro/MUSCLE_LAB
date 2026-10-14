@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NavBar } from '../components/NavBar';
-import { ExerciseMedia } from '../components/ExerciseMedia';
+import { ExerciseThumb } from '../components/ExerciseThumb';
 import { BodySelector } from '../components/BodySelector';
 import { Toast, useToast } from '../components/Toast';
 import { colors, minTouchTarget, radii, screenPaddingHorizontal } from '../theme/tokens';
@@ -105,9 +105,7 @@ export function ExerciciosScreen() {
               style={[styles.row, i > 0 && styles.rowDivider]}
               onPress={() => navigation.navigate('Ficha', { exerciseId: e.id })}
             >
-              <View style={styles.thumb}>
-                <ExerciseMedia exerciseId={e.id} placeholderWidth={20} placeholderHeight={28} />
-              </View>
+              <ExerciseThumb exerciseId={e.id} />
               <View style={styles.flex1}>
                 <Text style={styles.rowName}>{e.name}</Text>
                 <Text style={styles.rowSubtitle}>
@@ -190,17 +188,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.divider },
-  thumb: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.card,
-    backgroundColor: colors.fill100,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
   rowName: { fontSize: 15, fontWeight: '600', color: colors.ink },
   rowSubtitle: { fontSize: 12, color: colors.gray500, marginTop: 2 },
   addButton: {

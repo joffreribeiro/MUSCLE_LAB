@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NavBar } from '../components/NavBar';
-import { ExerciseMedia } from '../components/ExerciseMedia';
+import { ExerciseThumb } from '../components/ExerciseThumb';
 import { BodySelector } from '../components/BodySelector';
 import { colors, radii, screenPaddingHorizontal } from '../theme/tokens';
 import { catalog, groupOrder } from '../data/catalog';
@@ -62,9 +62,7 @@ export function ManualScreen() {
                 style={[styles.row, i > 0 && styles.rowDivider]}
                 onPress={() => navigation.navigate('Grupo', { groupKey: key })}
               >
-                <View style={styles.thumb}>
-                  <ExerciseMedia exerciseId={group.items[0].id} placeholderWidth={20} placeholderHeight={28} />
-                </View>
+                <ExerciseThumb exerciseId={group.items[0].id} />
                 <Text style={styles.rowName}>{group.name}</Text>
                 <Text style={styles.rowCount}>{group.items.length} exercícios</Text>
                 <Text style={styles.chevron}>›</Text>
@@ -92,17 +90,6 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.96, color: colors.gray500, marginHorizontal: screenPaddingHorizontal, marginTop: 22, marginBottom: 8 },
   list: { backgroundColor: colors.surface },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingLeft: screenPaddingHorizontal, paddingRight: 14 },
-  thumb: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.card,
-    backgroundColor: colors.fill100,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
   rowName: { flex: 1, fontSize: 16, fontWeight: '600', color: colors.ink },
   rowCount: { fontSize: 13, color: colors.gray500 },
   chevron: { color: colors.gray300, fontSize: 17 },

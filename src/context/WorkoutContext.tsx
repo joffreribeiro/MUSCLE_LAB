@@ -25,8 +25,7 @@ import {
   WorkoutSettings,
 } from '../types';
 import { averageRir, rirTag } from '../data/rir';
-import { suggestNext } from '../data/progression';
-import { estimateLoad } from '../data/programGenerator';
+import { substituteWeight } from '../data/similarExercises';
 import { PendingSub, applyReverts, buildSubstitute, dropSub, recordSub } from '../data/substitution';
 import { dayKey } from '../data/stats';
 import { removeWeight, upsertWeight } from '../data/bodyWeight';
@@ -550,16 +549,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       const original = dayExercises[index];
       if (!activeWorkout || !original) return;
 
-      // A carga do exercício antigo não vale para um movimento diferente: usa a do histórico do
-      // novo, senão a estimada pelo perfil, senão o padrão da biblioteca.
-      const history = suggestNext(exercise.id, original.reps, sessions);
-      const estimated = profile ? estimateLoad(exercise.id, profile.weightKg, profile.level) : null;
-      const weight =
-        history !== null
-          ? history.weight ?? history.lastWeight
-          : exercise.equipment === 'peso-corporal'
-            ? 0
-            : estimated ?? buildDayExerciseFromExercise(exercise).weight ?? 0;
+      // A carga do exercício antigo não vale para um movimento diferente (ver substituteWeight).
+      const weight = substituteWeight(exercise, original.reps, sessions, profile);
 
       const replacement = buildSubstitute(original, exercise, weight);
       updateActiveExercises((prev) => prev.map((e, i) => (i === index ? replacement : e)));

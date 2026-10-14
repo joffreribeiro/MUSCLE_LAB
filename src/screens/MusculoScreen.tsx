@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NavBar } from '../components/NavBar';
 import { BodySelector } from '../components/BodySelector';
-import { ExerciseMedia } from '../components/ExerciseMedia';
+import { ExerciseThumb } from '../components/ExerciseThumb';
 import { Toast, useToast } from '../components/Toast';
 import { colors, radii, screenPaddingHorizontal } from '../theme/tokens';
 import { useWorkout } from '../context/WorkoutContext';
@@ -44,9 +44,7 @@ export function MusculoScreen() {
       onPress={() => navigation.navigate('Ficha', { exerciseId: r.exercise.id })}
     >
       <View style={[styles.rankBar, { backgroundColor: accent }]} />
-      <View style={styles.thumb}>
-        <ExerciseMedia exerciseId={r.exercise.id} placeholderWidth={20} placeholderHeight={28} />
-      </View>
+      <ExerciseThumb exerciseId={r.exercise.id} />
       <View style={styles.flex1}>
         <Text style={styles.rowName}>{r.exercise.name}</Text>
         <Text style={styles.rowSubtitle}>
@@ -135,17 +133,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingRight: 14 },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.divider },
   rankBar: { width: 4, alignSelf: 'stretch', borderTopRightRadius: 2, borderBottomRightRadius: 2 },
-  thumb: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.card,
-    backgroundColor: colors.fill100,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
   flex1: { flex: 1, minWidth: 0 },
   rowName: { fontSize: 15, fontWeight: '600', color: colors.ink },
   rowSubtitle: { fontSize: 12, color: colors.gray500, marginTop: 2 },

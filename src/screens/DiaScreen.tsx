@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NavBar } from '../components/NavBar';
 import { ProgressRing } from '../components/ProgressRing';
-import { ExerciseMedia } from '../components/ExerciseMedia';
+import { ExerciseThumb } from '../components/ExerciseThumb';
 import { Icon } from '../components/icons/Icon';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { EditPrescriptionSheet } from '../components/EditPrescriptionSheet';
@@ -201,9 +201,7 @@ export function DiaScreen() {
                     navigation.navigate('Exec');
                   }}
                 >
-                  <View style={styles.thumb}>
-                    <ExerciseMedia exerciseId={e.exerciseId} placeholderWidth={20} placeholderHeight={28} />
-                  </View>
+                  <ExerciseThumb exerciseId={e.exerciseId} />
                   <View style={styles.flex1}>
                     <Text style={styles.rowName}>{e.name}</Text>
                     <Text style={[styles.rowPrescr, editing && styles.rowPrescrEditable]}>
@@ -374,17 +372,6 @@ const styles = StyleSheet.create({
     paddingRight: 14,
   },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.divider },
-  thumb: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.card,
-    backgroundColor: colors.fill100,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
   rowName: { fontSize: 15, fontWeight: '600', lineHeight: 19, color: colors.ink },
   rowPrescr: { fontSize: 12, color: colors.gray500, marginTop: 2 },
   rowPrescrEditable: { color: colors.teal500, fontWeight: '600' },

@@ -13,6 +13,8 @@ interface ExerciseMediaProps {
   placeholderCaption?: string;
   placeholderHighlighted?: boolean;
   placeholderLimbColor?: string;
+  /** 'contain' mostra a animação inteira (telas de execução e ficha); 'cover' preenche e corta (miniaturas). */
+  fit?: 'cover' | 'contain';
 }
 
 // Mostra a animação real do exercício (GIF) quando disponível; caso contrário,
@@ -24,6 +26,7 @@ export function ExerciseMedia({
   placeholderCaption,
   placeholderHighlighted = false,
   placeholderLimbColor = colors.gray300,
+  fit = 'cover',
 }: ExerciseMediaProps) {
   const source = getExerciseMedia(exerciseId);
 
@@ -32,7 +35,7 @@ export function ExerciseMedia({
       <Image
         source={source}
         style={styles.image}
-        resizeMode="cover"
+        resizeMode={fit}
         accessibilityIgnoresInvertColors
       />
     );

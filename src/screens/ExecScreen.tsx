@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { useNavigation } from '@react-navigation/native';
 import { NavBar } from '../components/NavBar';
 import { ExerciseMedia } from '../components/ExerciseMedia';
+import { MediaViewer } from '../components/MediaViewer';
 import { ProgressRing } from '../components/ProgressRing';
 import { SubstituteSheet } from '../components/SubstituteSheet';
 import { EditSetSheet } from '../components/EditSetSheet';
@@ -17,6 +18,7 @@ import { PlateCalculator } from '../components/PlateCalculator';
 import { MethodCard } from '../components/MethodCard';
 import { WarmupCard } from '../components/WarmupCard';
 import { findMetodo } from '../data/metodos';
+import { getExerciseMedia } from '../data/media';
 import { afterSet, groupAt, groupLabel } from '../data/superset';
 import { warmupSets } from '../data/warmup';
 import { Toast, useToast } from '../components/Toast';
@@ -87,12 +89,14 @@ function ExecBody() {
   const [minInput, setMinInput] = useState('');
   const [rirInput, setRirInput] = useState<number | null>(null);
   const [substituteOpen, setSubstituteOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [commentOpen, setCommentOpen] = useState(false);
   const [editingLogIndex, setEditingLogIndex] = useState<number | null>(null);
   const [restOverlayOpen, setRestOverlayOpen] = useState(false);
   const { toast, show: showToast, hide: hideToast } = useToast();
 
   const isCardio = ex.type === 'cardio';
+  const media = getExerciseMedia(ex.exerciseId);
   const n = Math.min(doneCount(ex.exerciseId), ex.sets);
   const isLast = exIndex >= dayExercises.length - 1;
 
@@ -222,14 +226,23 @@ function ExecBody() {
       />
       <ScrollView style={styles.body}>
         <View style={styles.media}>
-          <ExerciseMedia
-            exerciseId={ex.exerciseId}
-            placeholderWidth={66}
-            placeholderHeight={92}
-            placeholderCaption="SEM ANIMAÇÃO DISPONÍVEL"
-            placeholderHighlighted
-            placeholderLimbColor={colors.gray200}
-          />
+          {/* Tocar na animação a abre em tela grande; sem animação, abre a ficha do exercício. */}
+          <Pressable
+            style={styles.mediaTap}
+            onPress={() => (media ? setViewerOpen(true) : navigation.navigate('Ficha', { exerciseId: ex.exerciseId }))}
+            accessibilityRole="button"
+            accessibilityLabel={media ? 'Ver animação do exercício em tela grande' : 'Abrir ficha do exercício'}
+          >
+            <ExerciseMedia
+              exerciseId={ex.exerciseId}
+              placeholderWidth={66}
+              placeholderHeight={92}
+              placeholderCaption="SEM ANIMAÇÃO DISPONÍVEL"
+              placeholderHighlighted
+              placeholderLimbColor={colors.gray200}
+              fit="contain"
+            />
+          </Pressable>
           <View style={styles.mediaButtons}>
             <Pressable style={styles.mediaButton} onPress={() => setSubstituteOpen(true)}>
               <Icon name="swap" color={colors.navy700} size={18} />
@@ -412,6 +425,7 @@ function ExecBody() {
         </View>
       </ScrollView>
 
+      <MediaViewer visible={viewerOpen} source={media} title={ex.name} onClose={() => setViewerOpen(false)} />
       <SubstituteSheet
         visible={substituteOpen}
         dayExercise={ex}
@@ -458,7 +472,7 @@ const styles = StyleSheet.create({
   startLink: { fontSize: 15, fontWeight: '600', color: colors.teal500 },
 
   media: {
-    height: 190,
+    height: 230,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
@@ -466,6 +480,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     overflow: 'hidden',
   },
+  mediaTap: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
   mediaButtons: { position: 'absolute', right: 14, top: 44, gap: 10 },
   mediaButton: {
     width: 40,

@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BottomSheet } from './BottomSheet';
-import { ExerciseMedia } from './ExerciseMedia';
+import { ExerciseThumb } from './ExerciseThumb';
 import { colors, minTouchTarget, radii } from '../theme/tokens';
-import { catalog } from '../data/catalog';
+import { findExerciseById } from '../data/catalog';
+import { getKinesiology, itemName } from '../data/muscles';
+import { similarExercises, substitutePrescription } from '../data/similarExercises';
+import { useWorkout } from '../context/WorkoutContext';
 import { DayExercise, Exercise } from '../types';
 
 interface SubstituteSheetProps {
@@ -13,17 +16,27 @@ interface SubstituteSheetProps {
   onSubstitute: (exercise: Exercise, scope: 'hoje' | 'programa') => void;
 }
 
-// ROADMAP item 2 — substituir exercício (bottom sheet acionado pelo botão ⟳ da execução).
+// Substituir exercício (bottom sheet acionado pelo botão ⟳ da execução). Mostra só exercícios parecidos,
+// do mesmo grupo e com o mesmo músculo como alvo principal; os demais do grupo ficam atrás de um link.
 export function SubstituteSheet({ visible, dayExercise, onClose, onSubstitute }: SubstituteSheetProps) {
-  const alternatives = catalog[dayExercise.groupKey].items.filter((e) => e.id !== dayExercise.exerciseId);
-  const [selectedId, setSelectedId] = useState<string | undefined>(alternatives[0]?.id);
+  const { sessions, profile } = useWorkout();
+  const { similar, others } = useMemo(() => similarExercises(dayExercise.exerciseId), [dayExercise.exerciseId]);
+  const [showOthers, setShowOthers] = useState(false);
+  const alternatives = showOthers ? [...similar, ...others] : similar;
+  const [selectedId, setSelectedId] = useState<string | undefined>((similar[0] ?? others[0])?.id);
+  const current = findExerciseById(dayExercise.exerciseId);
+  const target = (getKinesiology(dayExercise.exerciseId)?.primarios ?? []).slice(0, 2).map(itemName).join(' e ');
 
   useEffect(() => {
-    if (visible) setSelectedId(alternatives[0]?.id);
+    if (visible) {
+      setShowOthers(false);
+      setSelectedId((similar[0] ?? others[0])?.id);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, dayExercise.exerciseId]);
 
-  const selected = alternatives.find((e) => e.id === selectedId);
+  const selected = [...similar, ...others].find((e) => e.id === selectedId);
+  const prescription = (e: Exercise) => substitutePrescription(dayExercise, e, sessions, profile);
 
   const handleSubstitute = (scope: 'hoje' | 'programa') => {
     if (!selected) return;
@@ -33,31 +46,57 @@ export function SubstituteSheet({ visible, dayExercise, onClose, onSubstitute }:
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <Text style={styles.title}>Substituir exercício</Text>
-      <Text style={styles.subtitle}>Alternativas para {dayExercise.groupLabel}</Text>
+      <Text style={styles.title}>Substituição de exercício</Text>
+      <Text style={styles.subtitle}>
+        {target ? `Exercícios parecidos, que trabalham ${target.toLowerCase()}` : `Alternativas para ${dayExercise.groupLabel}`}
+      </Text>
 
-      <View style={styles.list}>
-        {alternatives.map((e, i) => {
+      <ScrollView style={styles.listScroll} contentContainerStyle={styles.list}>
+        {current ? (
+          <View style={styles.row}>
+            <ExerciseThumb exerciseId={current.id} highlighted />
+            <View style={styles.rowTexts}>
+              <Text style={styles.rowName}>{current.name}</Text>
+              <Text style={styles.rowSub}>
+                Exercício atual
+                {dayExercise.type === 'cardio' ? '' : ` · ${dayExercise.sets}x${dayExercise.reps ?? '-'}${dayExercise.weight ? `x${dayExercise.weight} kg` : ''}`}
+              </Text>
+            </View>
+            <View style={styles.checkCircle}>
+              <Text style={styles.checkGlyph}>✓</Text>
+            </View>
+          </View>
+        ) : null}
+        {alternatives.map((e) => {
           const active = e.id === selectedId;
+          const isOther = !similar.includes(e);
           return (
             <Pressable
               key={e.id}
-              style={[styles.row, i > 0 && styles.rowDivider, active && styles.rowActive]}
+              style={[styles.row, styles.rowDivider, active && styles.rowActive]}
               onPress={() => setSelectedId(e.id)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
             >
-              <View style={styles.thumb}>
-                <ExerciseMedia exerciseId={e.id} placeholderWidth={20} placeholderHeight={28} placeholderHighlighted />
+              <ExerciseThumb exerciseId={e.id} highlighted />
+              <View style={styles.rowTexts}>
+                <Text style={styles.rowName}>{e.name}</Text>
+                <Text style={styles.rowSub}>
+                  {prescription(e)}
+                  {isOther ? ' · outro músculo' : ''}
+                </Text>
               </View>
-              <Text style={styles.rowName}>{e.name}</Text>
-              {i < 2 ? (
-                <View style={styles.similarBadge}>
-                  <Text style={styles.similarBadgeLabel}>similar</Text>
-                </View>
-              ) : null}
+              {active ? <View style={styles.selectedDot} /> : null}
             </Pressable>
           );
         })}
-      </View>
+        {similar.length === 0 && !showOthers ? <Text style={styles.emptyNote}>Não há exercícios parecidos a este no app.</Text> : null}
+        {!showOthers && others.length > 0 ? (
+          <Pressable style={styles.moreLink} onPress={() => setShowOthers(true)} accessibilityRole="button">
+            <Text style={styles.moreLinkLabel}>Ver outros exercícios de {dayExercise.groupLabel.toLowerCase()}</Text>
+          </Pressable>
+        ) : null}
+      </ScrollView>
 
       <Text style={styles.scopeNote}>
         <Text style={styles.scopeBold}>Só hoje:</Text> o exercício original volta quando você concluir o treino.{' '}
@@ -79,24 +118,20 @@ export function SubstituteSheet({ visible, dayExercise, onClose, onSubstitute }:
 const styles = StyleSheet.create({
   title: { fontSize: 17, fontWeight: '600', color: colors.ink },
   subtitle: { fontSize: 13, color: colors.gray500, marginTop: 4 },
-  list: { marginTop: 16, borderRadius: radii.card, overflow: 'hidden', backgroundColor: colors.fill50 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 11, paddingHorizontal: 14 },
+  listScroll: { marginTop: 16, maxHeight: 320, borderRadius: radii.card, backgroundColor: colors.fill50 },
+  list: { overflow: 'hidden' },
+  rowTexts: { flex: 1, gap: 2 },
+  rowSub: { fontSize: 12, color: colors.gray500 },
+  checkCircle: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.teal500, alignItems: 'center', justifyContent: 'center' },
+  checkGlyph: { fontSize: 13, fontWeight: '700', color: colors.surface },
+  selectedDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.teal500 },
+  emptyNote: { fontSize: 13, color: colors.gray500, padding: 14 },
+  moreLink: { padding: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.divider },
+  moreLinkLabel: { fontSize: 13, fontWeight: '600', color: colors.teal500 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 11, paddingHorizontal: 14, backgroundColor: colors.fill50 },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.divider },
   rowActive: { backgroundColor: colors.teal100 },
-  thumb: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.card,
-    backgroundColor: colors.fill100,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
   rowName: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.ink },
-  similarBadge: { paddingVertical: 3, paddingHorizontal: 8, borderRadius: radii.chip, backgroundColor: colors.teal500 },
-  similarBadgeLabel: { fontSize: 11, fontWeight: '600', color: colors.surface },
   scopeNote: { fontSize: 12, lineHeight: 17, color: colors.gray500, marginTop: 12 },
   scopeBold: { fontWeight: '700', color: colors.ink },
   footerRow: { flexDirection: 'row', gap: 10, marginTop: 14 },

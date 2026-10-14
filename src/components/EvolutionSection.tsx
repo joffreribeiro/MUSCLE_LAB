@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Icon } from './icons/Icon';
+import { EmptyState } from './EmptyState';
 import { TrendChart } from './TrendChart';
 import { colors, radii } from '../theme/tokens';
 import { useWorkout } from '../context/WorkoutContext';
@@ -9,11 +10,13 @@ import { formatKg } from '../data/progression';
 import { formatShortDate } from '../utils/format';
 
 /** "Minha evolução" na ficha do exercício: recordes e gráfico, a partir do histórico de treinos. */
-export function EvolutionSection({ exerciseId }: { exerciseId: string }) {
+export function EvolutionSection({ exerciseId, showEmpty }: { exerciseId: string; showEmpty?: boolean }) {
   const { sessions } = useWorkout();
   const evolution = useMemo(() => exerciseEvolution(exerciseId, sessions), [exerciseId, sessions]);
   const { points, records, bodyweight } = evolution;
-  if (points.length === 0) return null;
+  if (points.length === 0) {
+    return showEmpty ? <EmptyState title="Sem evolução ainda" text="Faça este exercício em um treino para ver seus recordes e o gráfico de evolução." /> : null;
+  }
 
   const chart = bodyweight
     ? points.map((p) => ({ dateISO: p.dateISO, value: p.topReps }))
