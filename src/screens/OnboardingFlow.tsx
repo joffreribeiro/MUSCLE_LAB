@@ -119,6 +119,7 @@ export function OnboardingFlow() {
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
         {step === 1 && (
           <Step title="Qual é o seu objetivo?">
+            <Text style={styles.brandName}>Muscle Lab</Text>
             {goalOptions.map((o) => (
               <SelectCard key={o.value} label={o.label} active={draft.goal === o.value} onPress={() => patch({ goal: o.value })} />
             ))}
@@ -319,6 +320,7 @@ function SelectCard({
 }
 
 const styles = StyleSheet.create({
+  brandName: { fontSize: 15, fontWeight: '700', color: colors.teal600, marginBottom: 6 },
   dayChip: { minWidth: 44, paddingVertical: 12, paddingHorizontal: 12, borderRadius: radii.chip, backgroundColor: colors.fill100, alignItems: 'center' },
   daysHint: { fontSize: 13, lineHeight: 19, color: colors.gray500, marginTop: 16 },
   restoreLink: { alignSelf: 'center', paddingVertical: 14, marginTop: 6 },

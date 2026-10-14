@@ -90,6 +90,10 @@ export function PerfilScreen() {
     <View style={styles.screen}>
       <NavBar title="Perfil" />
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+        <View style={styles.brandCard}>
+          <Text style={styles.brandName}>Muscle Lab</Text>
+          <Text style={styles.brandTagline}>Ciência do treino</Text>
+        </View>
         <Text style={styles.sectionLabel}>DADOS</Text>
         <View style={styles.card}>
           <Row label="Objetivo" value={goalLabel[profile.goal]} onPress={() => saveField({ goal: cycle(goalOrder, profile.goal) })} />
@@ -243,6 +247,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.fill50 },
   body: { flex: 1 },
   bodyContent: { padding: screenPaddingHorizontal, paddingBottom: 32 },
+  brandCard: { backgroundColor: colors.navy700, borderRadius: radii.card, padding: 16, marginBottom: 22 },
+  brandName: { fontSize: 20, fontWeight: '700', color: colors.surface },
+  brandTagline: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
   sectionLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.96, color: colors.gray500, marginBottom: 8, marginTop: 8 },
   card: { backgroundColor: colors.surface, borderRadius: radii.card, overflow: 'hidden', marginBottom: 22 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, minHeight: minTouchTarget },

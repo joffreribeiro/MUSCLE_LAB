@@ -15,9 +15,18 @@
         "foregroundImage": "./assets/icon/adaptive-foreground.png",
         "monochromeImage": "./assets/icon/adaptive-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.joffreribeiro.musclelab"
     },
-    "plugins": [["expo-notifications", { "color": "#14A8A8", "defaultChannel": "descanso" }]],
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#14A8A8",
+          "defaultChannel": "descanso"
+        }
+      ]
+    ],
     "web": {
       "favicon": "./assets/icon/favicon.png"
     }
